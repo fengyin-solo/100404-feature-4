@@ -40,6 +40,11 @@ export function listRows(key: string): EntryRow[] {
   return allRows()[key] ?? []
 }
 
+// 写前重读：会诊结论等场景要求并发时以最新落盘数据为准，清掉内存缓存强制回读。
+export function reloadRows(): void {
+  cache = null
+}
+
 export function saveRows(key: string, rows: EntryRow[]): void {
   const next = { ...allRows(), [key]: rows }
   cache = next

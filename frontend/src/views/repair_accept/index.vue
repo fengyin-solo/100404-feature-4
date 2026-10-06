@@ -33,6 +33,10 @@
       <button class="btn ghost" type="button" @click="resetFilters">重置条件</button>
     </form>
 
+    <p class="info-text">
+      已按管辖区域「{{ region || '全部' }}」过滤，跨区域验收记录不在此展示；可在缺陷会诊页切换管辖单位。
+    </p>
+
     <table class="data-table">
       <thead>
         <tr>
@@ -71,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 
 import {
   downloadEntries,
@@ -79,13 +83,19 @@ import {
   moduleMeta,
   runAction as applyAction,
 } from '@/api/local-service'
+import { regionOfUnit } from '@/data/consultation'
 import type { EntryRow } from '@/data/types'
+import { useSessionStore } from '@/stores/session'
 
 const meta = moduleMeta('repair_accept')
-const columns = ["验收编号", "关联维修", "验收人员", "验收日期", "维修质量", "验收结论", "复修要求", "验收状态"]
+const columns = ["验收编号", "关联维修", "验收人员", "验收日期", "维修质量", "验收结论", "复修要求", "验收状态", "管辖区域"]
 const actions = ["发起验收", "确认通过", "退回返修"]
 const statuses = ["待验收", "验收中", "已通过", "需返修"]
 const stats = [{"label": "待验收记录", "value": 0}, {"label": "已通过记录", "value": 0}, {"label": "需返修记录", "value": 0}]
+
+const session = useSessionStore()
+// 验收记录按管辖区域决定可见性：当前单位区域之外的记录不展示。
+const region = computed(() => regionOfUnit(session.unit))
 
 const rows = ref<EntryRow[]>([])
 const total = ref(0)
@@ -126,12 +136,16 @@ function reload() {
   errorMessage.value = ''
   try {
     const payload = listEntries(meta.key, filters.value)
-    rows.value = payload.items
-    total.value = payload.total
+    const visible = region.value
+      ? payload.items.filter((row) => String(row['管辖区域'] ?? '') === region.value)
+      : payload.items
+    rows.value = visible
+    total.value = visible.length
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '维修验收列表读取失败'
   }
 }
 
 onMounted(reload)
+watch(region, reload)
 </script>

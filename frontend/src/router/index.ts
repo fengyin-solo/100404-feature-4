@@ -4,6 +4,7 @@ import Dashboard from '@/views/Dashboard.vue'
 const Pipeline = () => import('@/views/pipeline/index.vue')
 const Inspection = () => import('@/views/inspection/index.vue')
 const Defect = () => import('@/views/defect/index.vue')
+const Consultation = () => import('@/views/consultation/index.vue')
 const OutRepair = () => import('@/views/out_repair/index.vue')
 const RepairAccept = () => import('@/views/repair_accept/index.vue')
 const PipeDetect = () => import('@/views/pipe_detect/index.vue')
@@ -27,6 +28,7 @@ const router = createRouter({
     { path: '/pipeline', name: 'pipeline', component: Pipeline },
     { path: '/inspection', name: 'inspection', component: Inspection },
     { path: '/defect', name: 'defect', component: Defect },
+    { path: '/consultation', name: 'consultation', component: Consultation },
     { path: '/out_repair', name: 'out_repair', component: OutRepair },
     { path: '/repair_accept', name: 'repair_accept', component: RepairAccept },
     { path: '/pipe_detect', name: 'pipe_detect', component: PipeDetect },

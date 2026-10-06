@@ -14,7 +14,8 @@
 ├── frontend/                 Vue 3 + Vite + TypeScript 前端（唯一运行单元）
 │   ├── src/views/            每个业务模块一个页面
 │   ├── src/api/local-service.ts   本地数据服务：列表、筛选、动作流转、导出
-│   ├── src/data/             模块元数据 / 示例数据 / localStorage 持久化
+│   ├── src/api/consultation-service.ts  缺陷会诊：优先级排序、归属校验、结论写回
+│   ├── src/data/             模块元数据 / 示例数据 / localStorage 持久化（含会诊规则配置）
 │   ├── src/stores/           会话与筛选状态
 │   └── vite.config.ts        dev server 配置（open: false，无 /api 代理）
 ├── .gitignore
@@ -45,6 +46,7 @@ npm run build
 | 管线登记 | `pipeline` | 管线 | 管线编号、管线类型、起点位置 |
 | 巡检任务 | `inspection` | 巡检任务 | 任务编号、巡检区域、巡检人员 |
 | 缺陷记录 | `defect` | 缺陷记录 | 缺陷编号、所属管线、缺陷类型 |
+| 缺陷会诊 | `consultation` | 会诊结论 | 缺陷编号、严重等级、所属管线 |
 | 外出维修 | `out_repair` | 外出维修 | 派遣编号、缺陷来源、维修人员 |
 | 维修验收 | `repair_accept` | 维修验收记录 | 验收编号、关联维修、验收人员 |
 | 管道检测 | `pipe_detect` | 检测记录 | 检测编号、检测管段、检测方式 |
@@ -61,11 +63,22 @@ npm run build
 | 监测设备 | `monitor_device` | 监测设备 | 设备编号、设备类型、安装位置 |
 | 施工队伍 | `contractor` | 施工队伍 | 队伍编号、队伍名称、资质等级 |
 
+## 缺陷会诊规则
+
+- **会诊顺序**：按严重等级、发现位置（区域风险）、所属管线（管线等级）生成，口径由当前规则版本决定，配置在 `frontend/src/data/consultation.ts`。
+- **归属限制**：只有本管辖单位的记录员能确认或忽略，跨单位只能查看；页面右上角可切换管辖单位与角色。
+- **结论写回**：会诊结论（确认/忽略）连同会诊单位、时间、规则版本写回缺陷记录；维修验收页按当前单位的管辖区域决定记录是否可见。
+- **并发**：同一缺陷并发会诊只保留首个有效结论，后来的操作被拒绝。
+- **待定位队列**：严重缺陷缺少管线归属时不静默忽略，进待定位队列，补录归属前不能下结论。
+- **规则版本**：「调整会诊规则」切换口径版本，只影响新结论与队列排序；历史结论按下结论时的口径快照展示。
+
 ## 约定
 
 - 每个模块的页面在 `frontend/src/views/<模块>/index.vue`，页面只负责渲染，读写统一走
-  `frontend/src/api/local-service.ts`。
+  `frontend/src/api/local-service.ts`（缺陷会诊走 `frontend/src/api/consultation-service.ts`）。
 - 字段、状态、动作与流转目标集中在 `frontend/src/data/modules.ts`；示例数据在
   `frontend/src/data/seed.ts`。
-- 状态流转只允许在 `local-service.ts` 里改，页面组件不做业务判断。
-- 想回到初始数据：清掉浏览器里 `underground-pipeline-inspection:entries` 这一项，或调用 `resetModule(模块)`。
+- 状态流转只允许在 `local-service.ts` / `consultation-service.ts` 里改，页面组件不做业务判断。
+- 想回到初始数据：清掉浏览器里 `underground-pipeline-inspection:entries` 这一项，或调用 `resetModule(模块)`；
+  会诊结论与规则版本分别在 `underground-pipeline-inspection:consultations`、
+  `underground-pipeline-inspection:consultation-rule` 下。
